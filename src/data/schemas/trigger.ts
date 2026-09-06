@@ -96,7 +96,7 @@ const schema: Record<string, any> = {
           },
           "type" : {
             "type" : "string",
-            "enum" : [ "Webhook", "Artifact", "Manifest", "Scheduled", "MultiRegionArtifact" ]
+            "enum" : [ "Webhook", "Artifact", "Manifest", "Scheduled", "MultiRegionArtifact", "SystemEvent" ]
           },
           "webhookId" : {
             "type" : "string"
@@ -175,6 +175,21 @@ const schema: Record<string, any> = {
             "properties" : {
               "spec" : {
                 "$ref" : "#/definitions/trigger/trigger_type/webhook_trigger"
+              }
+            }
+          }
+        }, {
+          "if" : {
+            "properties" : {
+              "type" : {
+                "const" : "SystemEvent"
+              }
+            }
+          },
+          "then" : {
+            "properties" : {
+              "spec" : {
+                "$ref" : "#/definitions/trigger/trigger_type/system_event_trigger"
               }
             }
           }
@@ -708,6 +723,37 @@ const schema: Record<string, any> = {
               "properties" : {
                 "spec" : {
                   "$ref" : "#/definitions/trigger/webhook_trigger/harness_artifact_registry_spec"
+                }
+              }
+            }
+          } ],
+          "$schema" : "http://json-schema.org/draft-07/schema#"
+        },
+        "system_event_trigger" : {
+          "title" : "system_event_trigger",
+          "allOf" : [ {
+            "$ref" : "#/definitions/trigger/trigger_spec"
+          }, {
+            "type" : "object",
+            "required" : [ "type", "spec" ],
+            "properties" : {
+              "type" : {
+                "type" : "string",
+                "enum" : [ "Pipeline" ]
+              }
+            }
+          }, {
+            "if" : {
+              "properties" : {
+                "type" : {
+                  "const" : "Pipeline"
+                }
+              }
+            },
+            "then" : {
+              "properties" : {
+                "spec" : {
+                  "$ref" : "#/definitions/trigger/system_event_trigger/pipeline_system_event_spec"
                 }
               }
             }
@@ -1580,7 +1626,7 @@ const schema: Record<string, any> = {
               },
               "helmVersion" : {
                 "type" : "string",
-                "enum" : [ "V2", "V3", "V380" ]
+                "enum" : [ "V2", "V3", "V380", "V4" ]
               },
               "store" : {
                 "$ref" : "#/definitions/trigger/manifest_trigger/build_store"
@@ -2467,7 +2513,7 @@ const schema: Record<string, any> = {
             "properties" : {
               "type" : {
                 "type" : "string",
-                "enum" : [ "PullRequest", "Push", "IssueComment", "Release", "Delete", "Create" ]
+                "enum" : [ "PullRequest", "Push", "IssueComment", "Release", "Delete", "Create", "PullRequestReview", "MergeQueue" ]
               }
             }
           }, {
@@ -2557,6 +2603,36 @@ const schema: Record<string, any> = {
               "properties" : {
                 "spec" : {
                   "$ref" : "#/definitions/trigger/webhook_trigger/github_create_spec"
+                }
+              }
+            }
+          }, {
+            "if" : {
+              "properties" : {
+                "type" : {
+                  "const" : "PullRequestReview"
+                }
+              }
+            },
+            "then" : {
+              "properties" : {
+                "spec" : {
+                  "$ref" : "#/definitions/trigger/webhook_trigger/github_pr_review_spec"
+                }
+              }
+            }
+          }, {
+            "if" : {
+              "properties" : {
+                "type" : {
+                  "const" : "MergeQueue"
+                }
+              }
+            },
+            "then" : {
+              "properties" : {
+                "spec" : {
+                  "$ref" : "#/definitions/trigger/webhook_trigger/github_merge_queue_spec"
                 }
               }
             }
@@ -2764,6 +2840,80 @@ const schema: Record<string, any> = {
         },
         "github_create_spec" : {
           "title" : "github_create_spec",
+          "allOf" : [ {
+            "$ref" : "#/definitions/trigger/webhook_trigger/github_event_spec"
+          }, {
+            "type" : "object",
+            "properties" : {
+              "connectorRef" : {
+                "type" : "string"
+              },
+              "headerConditions" : {
+                "type" : "array",
+                "items" : {
+                  "$ref" : "#/definitions/trigger/trigger_event_data"
+                }
+              },
+              "jexlCondition" : {
+                "type" : "string"
+              },
+              "payloadConditions" : {
+                "type" : "array",
+                "items" : {
+                  "$ref" : "#/definitions/trigger/trigger_event_data"
+                }
+              },
+              "repoName" : {
+                "type" : "string"
+              }
+            }
+          } ],
+          "$schema" : "http://json-schema.org/draft-07/schema#"
+        },
+        "github_pr_review_spec" : {
+          "title" : "github_pr_review_spec",
+          "allOf" : [ {
+            "$ref" : "#/definitions/trigger/webhook_trigger/github_event_spec"
+          }, {
+            "type" : "object",
+            "properties" : {
+              "actions" : {
+                "type" : "array",
+                "items" : {
+                  "type" : "string",
+                  "enum" : [ "Submitted", "Edited", "Dismissed" ]
+                }
+              },
+              "autoAbortPreviousExecutions" : {
+                "type" : "boolean"
+              },
+              "connectorRef" : {
+                "type" : "string"
+              },
+              "headerConditions" : {
+                "type" : "array",
+                "items" : {
+                  "$ref" : "#/definitions/trigger/trigger_event_data"
+                }
+              },
+              "jexlCondition" : {
+                "type" : "string"
+              },
+              "payloadConditions" : {
+                "type" : "array",
+                "items" : {
+                  "$ref" : "#/definitions/trigger/trigger_event_data"
+                }
+              },
+              "repoName" : {
+                "type" : "string"
+              }
+            }
+          } ],
+          "$schema" : "http://json-schema.org/draft-07/schema#"
+        },
+        "github_merge_queue_spec" : {
+          "title" : "github_merge_queue_spec",
           "allOf" : [ {
             "$ref" : "#/definitions/trigger/webhook_trigger/github_event_spec"
           }, {
@@ -3088,7 +3238,7 @@ const schema: Record<string, any> = {
             "properties" : {
               "type" : {
                 "type" : "string",
-                "enum" : [ "PullRequest", "Push", "Branch", "Tag" ]
+                "enum" : [ "PullRequest", "Push", "Branch", "Tag", "MergeQueue" ]
               }
             }
           }, {
@@ -3148,6 +3298,21 @@ const schema: Record<string, any> = {
               "properties" : {
                 "spec" : {
                   "$ref" : "#/definitions/trigger/webhook_trigger/harness_tag_spec"
+                }
+              }
+            }
+          }, {
+            "if" : {
+              "properties" : {
+                "type" : {
+                  "const" : "MergeQueue"
+                }
+              }
+            },
+            "then" : {
+              "properties" : {
+                "spec" : {
+                  "$ref" : "#/definitions/trigger/webhook_trigger/harness_merge_queue_spec"
                 }
               }
             }
@@ -3303,6 +3468,35 @@ const schema: Record<string, any> = {
           } ],
           "$schema" : "http://json-schema.org/draft-07/schema#"
         },
+        "harness_merge_queue_spec" : {
+          "title" : "harness_merge_queue_spec",
+          "allOf" : [ {
+            "$ref" : "#/definitions/trigger/webhook_trigger/harness_event_spec"
+          }, {
+            "type" : "object",
+            "properties" : {
+              "headerConditions" : {
+                "type" : "array",
+                "items" : {
+                  "$ref" : "#/definitions/trigger/trigger_event_data"
+                }
+              },
+              "jexlCondition" : {
+                "type" : "string"
+              },
+              "payloadConditions" : {
+                "type" : "array",
+                "items" : {
+                  "$ref" : "#/definitions/trigger/trigger_event_data"
+                }
+              },
+              "repoName" : {
+                "type" : "string"
+              }
+            }
+          } ],
+          "$schema" : "http://json-schema.org/draft-07/schema#"
+        },
         "event_bridge_spec" : {
           "title" : "event_bridge_spec",
           "allOf" : [ {
@@ -3409,6 +3603,28 @@ const schema: Record<string, any> = {
           "title" : "har_event_spec",
           "type" : "object",
           "discriminator" : "type",
+          "$schema" : "http://json-schema.org/draft-07/schema#"
+        }
+      },
+      "system_event_trigger" : {
+        "pipeline_system_event_spec" : {
+          "title" : "pipeline_system_event_spec",
+          "type" : "object",
+          "required" : [ "eventType" ],
+          "properties" : {
+            "eventType" : {
+              "description" : "The pipeline event type to react to",
+              "type" : "string",
+              "enum" : [ "PipelineSuccess", "PipelineFailure" ]
+            },
+            "payloadConditions" : {
+              "description" : "Optional conditions on the event payload. Supported key is \"sourcePipeline\". Empty list matches any source pipeline.",
+              "type" : "array",
+              "items" : {
+                "$ref" : "#/definitions/trigger/trigger_event_data"
+              }
+            }
+          },
           "$schema" : "http://json-schema.org/draft-07/schema#"
         }
       }
